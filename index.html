@@ -40,7 +40,7 @@ Date Range:
 <input type="date" id="startDate"> to <input type="date" id="endDate">
 
 <!-- Add Task Section -->
-<div id="addTaskDiv" style="margin-top:10px;">
+<div id="addTaskDiv" style="margin-top:10px; display:none;">
 <h3>Add Task</h3>
 Task Description: <input type="text" id="taskDesc">
 Assigned To (comma-separated names): <input type="text" id="taskAssigned">
@@ -71,29 +71,42 @@ const webAppUrl = "https://script.google.com/macros/s/AKfycbwxbTTGacG-RNGExoETgd
 const admins = ["Sneha","Ice"];
 let userName = "";
 let allTasks = [];
+let allMembers = [];
 
-// Fetch tasks
-async function fetchTasks(){
-  const res = await fetch(`https://opensheet.elk.sh/${sheetId}/Tasks`);
-  allTasks = await res.json();
-  populateUserDropdown();
-  displayTasks();
-}
-
-// Populate user dropdowns
-function populateUserDropdown(){
-  const users = new Set();
-  allTasks.forEach(t => t["Assigned To"].split(",").map(x=>x.trim()).forEach(u=>users.add(u)));
+// Fetch members and tasks
+async function fetchData(){
+  // Fetch Team Members
+  const membersRes = await fetch(`https://opensheet.elk.sh/${sheetId}/Team Members`);
+  allMembers = await membersRes.json();
+  
+  // Populate User dropdown
   const userSelect = document.getElementById("userSelect");
   userSelect.innerHTML = '<option value="">-- Select User --</option>';
-  users.forEach(u=>userSelect.appendChild(new Option(u,u)));
+  allMembers.forEach(m=>{
+    userSelect.appendChild(new Option(m.Name,m.Name));
+  });
 
+  // Populate Assigned filter
   const assignedFilter = document.getElementById("assignedFilter");
   assignedFilter.innerHTML = '<option value="All">All</option>';
-  users.forEach(u=>assignedFilter.appendChild(new Option(u,u)));
+  allMembers.forEach(m=>{
+    assignedFilter.appendChild(new Option(m.Name,m.Name));
+  });
+
+  // Fetch Tasks
+  const tasksRes = await fetch(`https://opensheet.elk.sh/${sheetId}/Tasks`);
+  allTasks = await tasksRes.json();
 }
 
-// Display tasks in table
+function updateAddTaskVisibility(){
+  const addTaskDiv = document.getElementById("addTaskDiv");
+  if(admins.includes(userName)){
+    addTaskDiv.style.display = "block";
+  } else {
+    addTaskDiv.style.display = "none";
+  }
+}
+
 function displayTasks(){
   const tbody = document.querySelector("#taskTable tbody");
   tbody.innerHTML = "";
@@ -131,8 +144,6 @@ function displayTasks(){
     `;
     tbody.appendChild(tr);
   });
-
-  document.getElementById("addTaskDiv").style.display = admins.includes(userName) ? "block" : "none";
 }
 
 // Confirmation popup before status update
@@ -150,7 +161,7 @@ async function updateTask(taskId, status){
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({action:"update", ID:taskId, Status:status})
   });
-  fetchTasks();
+  fetchData().then(displayTasks);
 }
 
 // Add Task
@@ -162,6 +173,9 @@ async function addTask(){
 
   if(!desc || !assigned){ alert("Task Description and Assigned To required"); return; }
 
+  const today = new Date();
+  const assignedDate = today.toISOString().split("T")[0];
+
   await fetch(webAppUrl,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -170,7 +184,10 @@ async function addTask(){
       TaskDescription:desc,
       AssignedTo:assigned,
       Deadline:deadline,
-      Remarks:remarks
+      Remarks:remarks,
+      AssignedDate:assignedDate,
+      Status:"To Do",
+      CompletionDate:""
     })
   });
 
@@ -179,17 +196,21 @@ async function addTask(){
   document.getElementById("taskDeadline").value="";
   document.getElementById("taskRemarks").value="";
 
-  fetchTasks();
+  fetchData().then(displayTasks);
 }
 
 // Event listeners
-document.getElementById("userSelect").addEventListener("change", e=>{ userName=e.target.value; displayTasks(); });
+document.getElementById("userSelect").addEventListener("change", e=>{
+  userName=e.target.value;
+  updateAddTaskVisibility();
+  displayTasks();
+});
 document.getElementById("statusFilter").addEventListener("change", displayTasks);
 document.getElementById("assignedFilter").addEventListener("change", displayTasks);
 document.getElementById("startDate").addEventListener("change", displayTasks);
 document.getElementById("endDate").addEventListener("change", displayTasks);
 
-fetchTasks();
+fetchData().then(displayTasks);
 </script>
 </body>
 </html>
