@@ -22,170 +22,173 @@ button:disabled { background: #aaa; cursor: not-allowed; }
 <h1>Team Task Dashboard</h1>
 
 <!-- User selection -->
-<p>Select your email:</p>
-<select id="userEmail"><option value="">-- Select User --</option></select>
+<p>Select your name:</p>
+<select id="userSelect"><option value="">-- Select User --</option></select>
 
-<!-- Status filter -->
-<p>Filter by status:</p>
+<!-- Filters -->
+<p>Filter:</p>
+Status:
 <select id="statusFilter">
   <option value="All">All</option>
   <option value="To Do">To Do</option>
   <option value="In Progress">In Progress</option>
   <option value="Completed">Completed</option>
 </select>
+Assigned To:
+<select id="assignedFilter"><option value="All">All</option></select>
+Date Range:
+<input type="date" id="startDate"> to <input type="date" id="endDate">
 
-<!-- Add Task (only visible for admins) -->
+<!-- Add Task Section -->
 <div id="addTaskDiv" style="margin-top:10px;">
-  <h3>Add Task</h3>
-  Task Description: <input type="text" id="newTaskDesc">
-  Assigned To (comma-separated emails): <input type="text" id="newTaskAssigned">
-  Deadline: <input type="date" id="newTaskDeadline">
-  <button onclick="addTask()">Add Task</button>
+<h3>Add Task</h3>
+Task Description: <input type="text" id="taskDesc">
+Assigned To (comma-separated names): <input type="text" id="taskAssigned">
+Deadline: <input type="date" id="taskDeadline">
+Remarks: <input type="text" id="taskRemarks">
+<button onclick="addTask()">Add Task</button>
 </div>
 
-<!-- Task table -->
+<!-- Task Table -->
 <table id="taskTable">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Task Description</th>
-      <th>Assigned Date</th>
-      <th>Deadline</th>
-      <th>Status</th>
-      <th>Completion Date</th>
-      <th>Remarks</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
+<thead>
+<tr>
+<th>Task Description</th>
+<th>Assigned Date</th>
+<th>Deadline</th>
+<th>Status</th>
+<th>Completion Date</th>
+<th>Remarks</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody></tbody>
 </table>
 
 <script>
-// ======== Config ========
-const sheetId = "PASTE_YOUR_SHEET_ID_HERE"; // Google Sheet ID
-const sheetName = "Tasks";
-const apiUrl = `https://opensheet.elk.sh/${1D1e_PSZilgAZmsmxbyKFdgQpXrMdgKreoynjdGt5wy8}/${Tasks}`;
-const webAppUrl = "https://script.google.com/macros/s/AKfycbzjQMjZ4w4QDPFZLAzJ6sxkx3YwluiYle_ChMvmD81xNm9TcGkmLr08x6e89k4ZwE9q/exec";
-
-// Users & roles
-const admins = ["sneha.greentruth@gmail.com"]; // add admin emails here
-let userEmail = "";
+const sheetId = "1D1e_PSZilgAZmsmxbyKFdgQpXrMdgKreoynjdGt5wy8"; 
+const webAppUrl = "https://script.google.com/macros/s/AKfycbwxbTTGacG-RNGExoETgdcInviDQeeqlq4yvNrsccbNUHyiqvBS1k34N0yuZrRXwmpA/exec";
+const admins = ["Sneha","Ice"];
+let userName = "";
 let allTasks = [];
 
-// ======== Fetch tasks ========
-async function fetchTasks() {
-  const res = await fetch(apiUrl);
-  const data = await res.json();
-  allTasks = data.map((task, index) => ({...task, ID: index+1})); // assign ID dynamically
-
-  // Populate user dropdown
-  const users = new Set();
-  allTasks.forEach(t => t["Assigned To"].split(",").forEach(e => users.add(e.trim())));
-  const userSelect = document.getElementById("userEmail");
-  userSelect.innerHTML = '<option value="">-- Select User --</option>';
-  users.forEach(email => userSelect.appendChild(new Option(email,email)));
-
+// Fetch tasks
+async function fetchTasks(){
+  const res = await fetch(`https://opensheet.elk.sh/${sheetId}/Tasks`);
+  allTasks = await res.json();
+  populateUserDropdown();
   displayTasks();
 }
 
-// ======== Display tasks ========
-function displayTasks() {
+// Populate user dropdowns
+function populateUserDropdown(){
+  const users = new Set();
+  allTasks.forEach(t => t["Assigned To"].split(",").map(x=>x.trim()).forEach(u=>users.add(u)));
+  const userSelect = document.getElementById("userSelect");
+  userSelect.innerHTML = '<option value="">-- Select User --</option>';
+  users.forEach(u=>userSelect.appendChild(new Option(u,u)));
+
+  const assignedFilter = document.getElementById("assignedFilter");
+  assignedFilter.innerHTML = '<option value="All">All</option>';
+  users.forEach(u=>assignedFilter.appendChild(new Option(u,u)));
+}
+
+// Display tasks in table
+function displayTasks(){
   const tbody = document.querySelector("#taskTable tbody");
   tbody.innerHTML = "";
+  const statusVal = document.getElementById("statusFilter").value;
+  const assignedVal = document.getElementById("assignedFilter").value;
+  const startDate = document.getElementById("startDate").value;
+  const endDate = document.getElementById("endDate").value;
 
-  const statusFilter = document.getElementById("statusFilter").value;
-  const filtered = allTasks.filter(task => {
-    const assignedList = task["Assigned To"].split(",").map(e=>e.trim());
-    const isAssigned = admins.includes(userEmail) || assignedList.includes(userEmail);
-    const statusMatch = (statusFilter === "All" || task.Status === statusFilter);
-    return isAssigned && statusMatch;
+  let filtered = allTasks.filter(task=>{
+    const assignedList = task["Assigned To"].split(",").map(x=>x.trim());
+    const isAssigned = admins.includes(userName) || assignedList.includes(userName);
+    const statusMatch = statusVal==="All" || task.Status===statusVal;
+    const assignedMatch = assignedVal==="All" || assignedList.includes(assignedVal);
+    const startMatch = !startDate || new Date(task["Assigned Date"]) >= new Date(startDate);
+    const endMatch = !endDate || new Date(task["Assigned Date"]) <= new Date(endDate);
+    return isAssigned && statusMatch && assignedMatch && startMatch && endMatch;
   });
 
-  // Sort by Assigned Date ascending
   filtered.sort((a,b)=> new Date(a["Assigned Date"]) - new Date(b["Assigned Date"]));
 
-  filtered.forEach(task => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${task.ID}</td>
+  filtered.forEach(task=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
       <td>${task["Task Description"]}</td>
       <td>${task["Assigned Date"]}</td>
       <td>${task.Deadline}</td>
-      <td class="${task.Status==="Completed"?"completed":task.Status==="In Progress"?"inprogress":"pending"}">${task.Status}</td>
+      <td>${task.Status}</td>
       <td>${task["Completion Date"]||""}</td>
       <td>${task.Remarks||""}</td>
       <td>
         ${task.Status==="Completed"?"✅":
-          `<button onclick="updateTaskStatus(${task.ID}, 'In Progress')">In Progress</button>
-           <button onclick="updateTaskStatus(${task.ID}, 'Completed')">Complete</button>`}
+          `<button onclick="confirmUpdate('${task.ID}','In Progress')">In Progress</button>
+           <button onclick="confirmUpdate('${task.ID}','Completed')">Complete</button>`}
       </td>
     `;
-    tbody.appendChild(row);
+    tbody.appendChild(tr);
   });
 
-  // Show add task div only for admins
-  document.getElementById("addTaskDiv").style.display = admins.includes(userEmail) ? "block" : "none";
+  document.getElementById("addTaskDiv").style.display = admins.includes(userName) ? "block" : "none";
 }
 
-// ======== Update task status ========
-async function updateTaskStatus(taskId, newStatus) {
-  const payload = {
-    action: "update",
-    ID: taskId,
-    Status: newStatus,
-    CompletionDate: newStatus==="Completed" ? new Date().toLocaleDateString() : ""
-  };
+// Confirmation popup before status update
+function confirmUpdate(taskId, status){
+  if(status==="Completed"){
+    if(!confirm("Mark this task as Completed?")) return;
+  }
+  updateTask(taskId,status);
+}
 
-  await fetch(webAppUrl, {
-    method: "POST",
-    body: JSON.stringify(payload),
-    headers: {"Content-Type":"application/json"}
+// Update Task
+async function updateTask(taskId, status){
+  await fetch(webAppUrl,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({action:"update", ID:taskId, Status:status})
   });
+  fetchTasks();
+}
+
+// Add Task
+async function addTask(){
+  const desc = document.getElementById("taskDesc").value;
+  const assigned = document.getElementById("taskAssigned").value;
+  const deadline = document.getElementById("taskDeadline").value;
+  const remarks = document.getElementById("taskRemarks").value;
+
+  if(!desc || !assigned){ alert("Task Description and Assigned To required"); return; }
+
+  await fetch(webAppUrl,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      action:"add",
+      TaskDescription:desc,
+      AssignedTo:assigned,
+      Deadline:deadline,
+      Remarks:remarks
+    })
+  });
+
+  document.getElementById("taskDesc").value="";
+  document.getElementById("taskAssigned").value="";
+  document.getElementById("taskDeadline").value="";
+  document.getElementById("taskRemarks").value="";
 
   fetchTasks();
 }
 
-// ======== Add new task ========
-async function addTask() {
-  const desc = document.getElementById("newTaskDesc").value;
-  const assigned = document.getElementById("newTaskAssigned").value;
-  const deadline = document.getElementById("newTaskDeadline").value;
-
-  if(!desc || !assigned) { alert("Task Description and Assigned To required"); return; }
-
-  const payload = {
-    action: "add",
-    AssignedDate: new Date().toLocaleDateString(),
-    TaskDescription: desc,
-    AssignedTo: assigned,
-    Deadline: deadline,
-    Status: "To Do",
-    CompletionDate: "",
-    Remarks: ""
-  };
-
-  await fetch(webAppUrl, {
-    method: "POST",
-    body: JSON.stringify(payload),
-    headers: {"Content-Type":"application/json"}
-  });
-
-  // Clear input fields
-  document.getElementById("newTaskDesc").value = "";
-  document.getElementById("newTaskAssigned").value = "";
-  document.getElementById("newTaskDeadline").value = "";
-
-  fetchTasks();
-}
-
-// ======== Event listeners ========
-document.getElementById("userEmail").addEventListener("change", (e)=> {
-  userEmail = e.target.value;
-  displayTasks();
-});
+// Event listeners
+document.getElementById("userSelect").addEventListener("change", e=>{ userName=e.target.value; displayTasks(); });
 document.getElementById("statusFilter").addEventListener("change", displayTasks);
+document.getElementById("assignedFilter").addEventListener("change", displayTasks);
+document.getElementById("startDate").addEventListener("change", displayTasks);
+document.getElementById("endDate").addEventListener("change", displayTasks);
 
-// ======== Initial fetch ========
 fetchTasks();
 </script>
 </body>
