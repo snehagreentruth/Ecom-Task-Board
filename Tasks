@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Task Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f6fa;
+      margin: 20px;
+    }
+    h1 {
+      color: #2f3640;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #dcdde1;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #273c75;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f1f2f6;
+    }
+    button {
+      background-color: #44bd32;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:disabled {
+      background-color: #aaa;
+    }
+    .completed {
+      color: green;
+      font-weight: bold;
+    }
+    .pending {
+      color: orange;
+    }
+  </style>
+</head>
+<body>
+  <h1>Team Task Dashboard</h1>
+  <p>Select your email to view your tasks:</p>
+  <select id="userEmail">
+    <option value="">-- Select User --</option>
+  </select>
+
+  <table id="taskTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Task Description</th>
+        <th>Assigned Date</th>
+        <th>Deadline</th>
+        <th>Status</th>
+        <th>Remarks</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const sheetId = "PASTE_YOUR_SHEET_ID_HERE";
+    const sheetName = "Tasks";
+    const apiUrl = `https://opensheet.elk.sh/${1D1e_PSZilgAZmsmxbyKFdgQpXrMdgKreoynjdGt5wy8}/${Tasks}`;
+
+    let userEmail = "";
+
+    async function fetchTasks() {
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+
+      // Fill user dropdown
+      const users = new Set();
+      data.forEach(task => {
+        if (task["Assigned To"]) {
+          task["Assigned To"].split(",").forEach(email => {
+            users.add(email.trim());
+          });
+        }
+      });
+      const userSelect = document.getElementById("userEmail");
+      users.forEach(email => {
+        const opt = document.createElement("option");
+        opt.value = email;
+        opt.textContent = email;
+        userSelect.appendChild(opt);
+      });
+
+      userSelect.addEventListener("change", (e) => {
+        userEmail = e.target.value;
+        displayTasks(data);
+      });
+    }
+
+    function displayTasks(tasks) {
+      const tbody = document.querySelector("#taskTable tbody");
+      tbody.innerHTML = "";
+      tasks.forEach(task => {
+        const assignedList = task["Assigned To"].split(",").map(e => e.trim());
+        if (assignedList.includes(userEmail)) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${task.ID}</td>
+            <td>${task["Task Description"]}</td>
+            <td>${task["Assigned Date"]}</td>
+            <td>${task["Deadline"]}</td>
+            <td class="${task.Status === "Completed" ? "completed" : "pending"}">${task.Status}</td>
+            <td>${task.Remarks || ""}</td>
+            <td>${task.Status === "Completed" ? "✅" : "<button>Mark Complete</button>"}</td>
+          `;
+          tbody.appendChild(row);
+        }
+      });
+    }
+
+    fetchTasks();
+  </script>
+</body>
+</html>
