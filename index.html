@@ -1,169 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-Com Task Board</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f6fa;
-      margin: 20px;
-    }
-    h1 {
-      color: #2f3640;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #dcdde1;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #273c75;
-      color: white;
-    }
-    tr:nth-child(even) {
-      background-color: #f1f2f6;
-    }
-    button {
-      background-color: #44bd32;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    button:disabled {
-      background-color: #aaa;
-    }
-    .completed {
-      color: green;
-      font-weight: bold;
-    }
-    .pending {
-      color: orange;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Task Dashboard</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f5f6fa; margin: 20px; }
+h1 { color: #2f3640; }
+select, input, button { padding: 6px; margin: 4px; }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+th, td { border: 1px solid #dcdde1; padding: 8px; text-align: left; }
+th { background: #273c75; color: white; }
+tr:nth-child(even) { background: #f1f2f6; }
+button { background: #44bd32; color: white; border: none; border-radius: 4px; cursor: pointer; }
+button:disabled { background: #aaa; cursor: not-allowed; }
+.completed { color: green; font-weight: bold; }
+.inprogress { color: orange; font-weight: bold; }
+</style>
 </head>
 <body>
-  <h1>E-Com Task Board</h1>
-  <p>Select your email to view your tasks:</p>
-  <select id="userEmail">
-    <option value="">-- Select User --</option>
-  </select>
+<h1>Team Task Dashboard</h1>
 
-  <table id="taskTable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Task Description</th>
-        <th>Assigned Date</th>
-        <th>Deadline</th>
-        <th>Status</th>
-        <th>Remarks</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<!-- User selection -->
+<p>Select your email:</p>
+<select id="userEmail"><option value="">-- Select User --</option></select>
 
-  <script>
-    // Your Google Sheet info
-    const sheetId = "PASTE_YOUR_SHEET_ID_HERE"; // replace with your Google Sheet ID
-    const sheetName = "Tasks";
-    const apiUrl = `https://opensheet.elk.sh/${1D1e_PSZilgAZmsmxbyKFdgQpXrMdgKreoynjdGt5wy8}/${Tasks}`;
+<!-- Status filter -->
+<p>Filter by status:</p>
+<select id="statusFilter">
+  <option value="All">All</option>
+  <option value="To Do">To Do</option>
+  <option value="In Progress">In Progress</option>
+  <option value="Completed">Completed</option>
+</select>
 
-    // Your Google Apps Script Web App URL
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbzjQMjZ4w4QDPFZLAzJ6sxkx3YwluiYle_ChMvmD81xNm9TcGkmLr08x6e89k4ZwE9q/exec";
+<!-- Add Task (only visible for admins) -->
+<div id="addTaskDiv" style="margin-top:10px;">
+  <h3>Add Task</h3>
+  Task Description: <input type="text" id="newTaskDesc">
+  Assigned To (comma-separated emails): <input type="text" id="newTaskAssigned">
+  Deadline: <input type="date" id="newTaskDeadline">
+  <button onclick="addTask()">Add Task</button>
+</div>
 
-    let userEmail = "";
+<!-- Task table -->
+<table id="taskTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Task Description</th>
+      <th>Assigned Date</th>
+      <th>Deadline</th>
+      <th>Status</th>
+      <th>Completion Date</th>
+      <th>Remarks</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-    // Fetch tasks from Google Sheet
-    async function fetchTasks() {
-      const res = await fetch(apiUrl);
-      const data = await res.json();
+<script>
+// ======== Config ========
+const sheetId = "PASTE_YOUR_SHEET_ID_HERE"; // Google Sheet ID
+const sheetName = "Tasks";
+const apiUrl = `https://opensheet.elk.sh/${1D1e_PSZilgAZmsmxbyKFdgQpXrMdgKreoynjdGt5wy8}/${Tasks}`;
+const webAppUrl = "https://script.google.com/macros/s/AKfycbzjQMjZ4w4QDPFZLAzJ6sxkx3YwluiYle_ChMvmD81xNm9TcGkmLr08x6e89k4ZwE9q/exec";
 
-      // Populate user dropdown dynamically
-      const users = new Set();
-      data.forEach(task => {
-        if (task["Assigned To"]) {
-          task["Assigned To"].split(",").forEach(email => users.add(email.trim()));
-        }
-      });
+// Users & roles
+const admins = ["sneha.greentruth@gmail.com"]; // add admin emails here
+let userEmail = "";
+let allTasks = [];
 
-      const userSelect = document.getElementById("userEmail");
-      userSelect.innerHTML = '<option value="">-- Select User --</option>'; // reset
-      users.forEach(email => {
-        const opt = document.createElement("option");
-        opt.value = email;
-        opt.textContent = email;
-        userSelect.appendChild(opt);
-      });
+// ======== Fetch tasks ========
+async function fetchTasks() {
+  const res = await fetch(apiUrl);
+  const data = await res.json();
+  allTasks = data.map((task, index) => ({...task, ID: index+1})); // assign ID dynamically
 
-      userSelect.addEventListener("change", (e) => {
-        userEmail = e.target.value;
-        displayTasks(data);
-      });
-    }
+  // Populate user dropdown
+  const users = new Set();
+  allTasks.forEach(t => t["Assigned To"].split(",").forEach(e => users.add(e.trim())));
+  const userSelect = document.getElementById("userEmail");
+  userSelect.innerHTML = '<option value="">-- Select User --</option>';
+  users.forEach(email => userSelect.appendChild(new Option(email,email)));
 
-    // Display tasks for the selected user
-    function displayTasks(tasks) {
-      const tbody = document.querySelector("#taskTable tbody");
-      tbody.innerHTML = "";
+  displayTasks();
+}
 
-      tasks.forEach(task => {
-        const assignedList = task["Assigned To"].split(",").map(e => e.trim());
-        if (userEmail && assignedList.includes(userEmail)) {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${task.ID}</td>
-            <td>${task["Task Description"]}</td>
-            <td>${task["Assigned Date"]}</td>
-            <td>${task["Deadline"]}</td>
-            <td class="${task.Status === "Completed" ? "completed" : "pending"}">${task.Status}</td>
-            <td>${task.Remarks || ""}</td>
-            <td>
-              ${task.Status === "Completed" ? "✅" : `<button onclick="markComplete('${task.ID}')">Mark Complete</button>`}
-            </td>
-          `;
-          tbody.appendChild(row);
-        }
-      });
-    }
+// ======== Display tasks ========
+function displayTasks() {
+  const tbody = document.querySelector("#taskTable tbody");
+  tbody.innerHTML = "";
 
-    // Function to mark a task as completed via Google Apps Script Web App
-    async function markComplete(taskId) {
-      const payload = {
-        ID: taskId,
-        Status: "Completed",
-        CompletionDate: new Date().toLocaleDateString()
-      };
+  const statusFilter = document.getElementById("statusFilter").value;
+  const filtered = allTasks.filter(task => {
+    const assignedList = task["Assigned To"].split(",").map(e=>e.trim());
+    const isAssigned = admins.includes(userEmail) || assignedList.includes(userEmail);
+    const statusMatch = (statusFilter === "All" || task.Status === statusFilter);
+    return isAssigned && statusMatch;
+  });
 
-      try {
-        const res = await fetch(webAppUrl, {
-          method: "POST",
-          body: JSON.stringify(payload),
-          headers: { "Content-Type": "application/json" }
-        });
-        const data = await res.json();
-        if (data.result === "success") {
-          alert("Task marked as completed!");
-          fetchTasks(); // Refresh table
-        }
-      } catch (error) {
-        alert("Error updating task. Check console.");
-        console.error(error);
-      }
-    }
+  // Sort by Assigned Date ascending
+  filtered.sort((a,b)=> new Date(a["Assigned Date"]) - new Date(b["Assigned Date"]));
 
-    // Initial fetch
-    fetchTasks();
-  </script>
+  filtered.forEach(task => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${task.ID}</td>
+      <td>${task["Task Description"]}</td>
+      <td>${task["Assigned Date"]}</td>
+      <td>${task.Deadline}</td>
+      <td class="${task.Status==="Completed"?"completed":task.Status==="In Progress"?"inprogress":"pending"}">${task.Status}</td>
+      <td>${task["Completion Date"]||""}</td>
+      <td>${task.Remarks||""}</td>
+      <td>
+        ${task.Status==="Completed"?"✅":
+          `<button onclick="updateTaskStatus(${task.ID}, 'In Progress')">In Progress</button>
+           <button onclick="updateTaskStatus(${task.ID}, 'Completed')">Complete</button>`}
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Show add task div only for admins
+  document.getElementById("addTaskDiv").style.display = admins.includes(userEmail) ? "block" : "none";
+}
+
+// ======== Update task status ========
+async function updateTaskStatus(taskId, newStatus) {
+  const payload = {
+    action: "update",
+    ID: taskId,
+    Status: newStatus,
+    CompletionDate: newStatus==="Completed" ? new Date().toLocaleDateString() : ""
+  };
+
+  await fetch(webAppUrl, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: {"Content-Type":"application/json"}
+  });
+
+  fetchTasks();
+}
+
+// ======== Add new task ========
+async function addTask() {
+  const desc = document.getElementById("newTaskDesc").value;
+  const assigned = document.getElementById("newTaskAssigned").value;
+  const deadline = document.getElementById("newTaskDeadline").value;
+
+  if(!desc || !assigned) { alert("Task Description and Assigned To required"); return; }
+
+  const payload = {
+    action: "add",
+    AssignedDate: new Date().toLocaleDateString(),
+    TaskDescription: desc,
+    AssignedTo: assigned,
+    Deadline: deadline,
+    Status: "To Do",
+    CompletionDate: "",
+    Remarks: ""
+  };
+
+  await fetch(webAppUrl, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: {"Content-Type":"application/json"}
+  });
+
+  // Clear input fields
+  document.getElementById("newTaskDesc").value = "";
+  document.getElementById("newTaskAssigned").value = "";
+  document.getElementById("newTaskDeadline").value = "";
+
+  fetchTasks();
+}
+
+// ======== Event listeners ========
+document.getElementById("userEmail").addEventListener("change", (e)=> {
+  userEmail = e.target.value;
+  displayTasks();
+});
+document.getElementById("statusFilter").addEventListener("change", displayTasks);
+
+// ======== Initial fetch ========
+fetchTasks();
+</script>
 </body>
 </html>
