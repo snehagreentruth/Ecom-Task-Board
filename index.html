@@ -3,18 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team Task Dashboard</title>
+  <title>Task Dashboard</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f3f4f6;
-      margin: 0;
-      padding: 20px;
+      margin: 20px;
+      background: #f8fafc;
       color: #333;
     }
-    h1 {
-      text-align: center;
-      color: #2c3e50;
+    h2 {
+      color: #0066cc;
     }
     .filters, .add-task {
       background: #fff;
@@ -23,62 +21,54 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
-    label {
-      font-weight: bold;
-    }
     select, input, textarea, button {
-      padding: 6px;
-      margin: 5px;
+      padding: 8px;
       border: 1px solid #ccc;
-      border-radius: 6px;
+      border-radius: 5px;
+      margin-right: 10px;
       font-size: 14px;
     }
     button {
-      background: #2ecc71;
+      background-color: #28a745;
       color: white;
+      border: none;
       cursor: pointer;
     }
     button:hover {
-      background: #27ae60;
+      background-color: #218838;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
+      background: #fff;
       border-radius: 10px;
       overflow: hidden;
     }
     th, td {
       padding: 10px;
+      border-bottom: 1px solid #ddd;
       text-align: left;
-      border-bottom: 1px solid #eee;
     }
     th {
-      background: #2c3e50;
-      color: white;
-    }
-    tr:hover {
       background: #f1f1f1;
-    }
-    .status {
-      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>Team Task Dashboard</h1>
+  <h2>📋 Task Management Dashboard</h2>
 
+  <!-- Filters -->
   <div class="filters">
-    <label for="filterStatus">Filter by Status:</label>
-    <select id="filterStatus" onchange="filterTasks()">
+    <label>Status:</label>
+    <select id="statusFilter">
       <option value="All">All</option>
       <option value="To Do">To Do</option>
       <option value="In Progress">In Progress</option>
       <option value="Completed">Completed</option>
     </select>
 
-    <label for="filterMember">Filter by Assigned To:</label>
-    <select id="filterMember" onchange="filterTasks()">
+    <label>Assigned To:</label>
+    <select id="assignedFilter">
       <option value="All">All</option>
       <option value="Sneha">Sneha</option>
       <option value="Shobha">Shobha</option>
@@ -87,39 +77,33 @@
       <option value="Virus">Virus</option>
     </select>
 
-    <label for="filterStart">From:</label>
-    <input type="date" id="filterStart" onchange="filterTasks()" />
-    <label for="filterEnd">To:</label>
-    <input type="date" id="filterEnd" onchange="filterTasks()" />
+    <label>Date Range:</label>
+    <input type="date" id="fromDate" /> to
+    <input type="date" id="toDate" />
   </div>
 
+  <!-- Add Task Section -->
   <div class="add-task">
     <h3>Add Task</h3>
+    <textarea id="taskDescription" rows="2" placeholder="Enter task description..."></textarea><br><br>
+    <label>Assigned To:</label>
+    <input type="text" id="assignedTo" placeholder="Comma-separated names" />
     <label>Assigned Date:</label>
     <input type="date" id="assignedDate" />
-
-    <label>Task Description:</label>
-    <input type="text" id="taskDescription" placeholder="Enter task description" size="40" />
-
-    <label>Assigned To (names, comma separated):</label>
-    <input type="text" id="assignedTo" placeholder="e.g., Sneha, Shobha" />
-
     <label>Deadline:</label>
-    <input type="date" id="deadline" />
-
+    <input type="date" id="deadline" /><br><br>
+    <label>Remarks:</label>
+    <input type="text" id="remarks" placeholder="Remarks..." />
     <label>Status:</label>
     <select id="status">
       <option value="To Do">To Do</option>
       <option value="In Progress">In Progress</option>
       <option value="Completed">Completed</option>
     </select>
-
-    <label>Remarks:</label>
-    <input type="text" id="remarks" placeholder="Optional remarks" />
-
     <button onclick="addTask()">Add Task</button>
   </div>
 
+  <!-- Task Table -->
   <table id="taskTable">
     <thead>
       <tr>
@@ -135,87 +119,54 @@
   </table>
 
   <script>
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbwVHdGlQKfJ4z-tNTANIBDmNdt8Biz2Vny9CpmtyefTbKWxCm1LaXBi81ZO-B7T3Y7C/exec";
-    let tasks = [];
-
-    async function loadTasks() {
-      try {
-        const res = await fetch(webAppUrl);
-        const data = await res.json();
-        tasks = data.tasks || [];
-        renderTasks(tasks);
-      } catch (err) {
-        console.error("Error loading tasks:", err);
-      }
-    }
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4aEjTqAtIeruu9SVIqb0GEc2S_lauprCl8iBq4sNGrfSTHKO0kig-qrNOK89l0PPb/exec";
 
     async function addTask() {
-      const task = {
-        action: "add",
-        AssignedDate: document.getElementById("assignedDate").value,
-        TaskDescription: document.getElementById("taskDescription").value,
-        AssignedTo: document.getElementById("assignedTo").value,
-        Deadline: document.getElementById("deadline").value,
-        Status: document.getElementById("status").value,
-        Remarks: document.getElementById("remarks").value,
-      };
+      const taskDescription = document.getElementById("taskDescription").value.trim();
+      const assignedTo = document.getElementById("assignedTo").value.trim();
+      const assignedDate = document.getElementById("assignedDate").value;
+      const deadline = document.getElementById("deadline").value;
+      const status = document.getElementById("status").value;
+      const remarks = document.getElementById("remarks").value.trim();
 
-      if (!task.TaskDescription || !task.AssignedDate || !task.AssignedTo) {
-        alert("Please fill required fields (Assigned Date, Description, Assigned To).");
+      if (!taskDescription || !assignedTo || !assignedDate || !deadline) {
+        alert("Please fill all mandatory fields!");
         return;
       }
 
+      const taskData = {
+        action: "addTask",
+        taskDescription,
+        assignedTo,
+        assignedDate,
+        deadline,
+        status,
+        remarks,
+      };
+
       try {
-        const res = await fetch(webAppUrl, {
+        const response = await fetch(WEB_APP_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(task),
+          body: JSON.stringify(taskData),
         });
-        const result = await res.json();
-        if (result.status === "success") {
+
+        const result = await response.json();
+        if (result.success) {
           alert("Task added successfully!");
           loadTasks();
         } else {
-          alert("Failed to add task.");
+          alert("Error adding task: " + (result.error || "Unknown error"));
         }
-      } catch (err) {
-        console.error("Error adding task:", err);
+      } catch (error) {
         alert("Server connection error!");
+        console.error(error);
       }
     }
 
-    function renderTasks(list) {
-      const tbody = document.querySelector("#taskTable tbody");
-      tbody.innerHTML = "";
-      list.forEach(task => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${task[1]}</td>
-          <td>${task[2]}</td>
-          <td>${task[4]}</td>
-          <td class="status">${task[5]}</td>
-          <td>${task[6] || ""}</td>
-          <td>${task[7] || ""}</td>
-        `;
-        tbody.appendChild(row);
-      });
+    async function loadTasks() {
+      // Future: implement fetching tasks
     }
-
-    function filterTasks() {
-      const status = document.getElementById("filterStatus").value;
-      const member = document.getElementById("filterMember").value;
-      const start = document.getElementById("filterStart").value;
-      const end = document.getElementById("filterEnd").value;
-
-      let filtered = tasks;
-      if (status !== "All") filtered = filtered.filter(t => t[5] === status);
-      if (member !== "All") filtered = filtered.filter(t => t[3].includes(member));
-      if (start) filtered = filtered.filter(t => new Date(t[2]) >= new Date(start));
-      if (end) filtered = filtered.filter(t => new Date(t[2]) <= new Date(end));
-      renderTasks(filtered);
-    }
-
-    loadTasks();
   </script>
 </body>
 </html>
