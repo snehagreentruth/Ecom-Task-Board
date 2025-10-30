@@ -14,20 +14,24 @@ th, td { border:1px solid #ccc; padding:5px; text-align:left; }
 <h1>Task Board</h1>
 
 <div>
-  <label>Filter User:
-    <select id="filterUser">
-      <option value="">All</option>
-      <option>Sneha</option><option>Shobha</option><option>Ice</option><option>Soso</option><option>Virus</option><option>Carl</option>
-    </select>
-  </label>
-  <label>Filter Status:
-    <select id="filterStatus">
-      <option value="">All</option>
-      <option>To Do</option><option>In Progress</option><option>Completed</option>
-    </select>
-  </label>
-  <label>Date From: <input type="date" id="filterFrom"></label>
-  <label>Date To: <input type="date" id="filterTo"></label>
+  <label for="filterUser">Filter User:</label>
+  <select id="filterUser">
+    <option value="">All</option>
+    <option>Sneha</option><option>Shobha</option><option>Ice</option><option>Soso</option><option>Virus</option><option>Carl</option>
+  </select>
+
+  <label for="filterStatus">Filter Status:</label>
+  <select id="filterStatus">
+    <option value="">All</option>
+    <option>To Do</option><option>In Progress</option><option>Completed</option>
+  </select>
+
+  <label for="filterFrom">Date From:</label>
+  <input type="date" id="filterFrom">
+
+  <label for="filterTo">Date To:</label>
+  <input type="date" id="filterTo">
+
   <button onclick="renderTasks()">Apply Filters</button>
 </div>
 
@@ -35,18 +39,26 @@ th, td { border:1px solid #ccc; padding:5px; text-align:left; }
 <h2>Add / Edit Task</h2>
 <form id="taskForm">
   <input type="hidden" id="taskID">
-  Task Description: <input type="text" id="desc"><br>
-  Assigned To: 
+  
+  <label for="desc">Task Description:</label>
+  <input type="text" id="desc"><br>
+
+  <label for="assignedTo">Assigned To:</label>
   <select id="assignedTo">
     <option>Sneha</option><option>Shobha</option><option>Ice</option><option>Soso</option><option>Virus</option><option>Carl</option>
   </select><br>
-  Assigned Date: <input type="date" id="assignedDate"><br>
-  Deadline: <input type="date" id="deadline"><br>
-  Status: 
+
+  <label for="assignedDate">Assigned Date:</label>
+  <input type="date" id="assignedDate"><br>
+
+  <label for="deadline">Deadline:</label>
+  <input type="date" id="deadline"><br>
+
+  <label for="status">Status:</label>
   <select id="status">
     <option>To Do</option><option>In Progress</option><option>Completed</option>
   </select><br>
-  Meeting Notes (PDF): <input type="file" id="pdfFile" accept="application/pdf"><br>
+
   <button type="button" onclick="saveTask()">Save Task</button>
 </form>
 
@@ -55,7 +67,8 @@ th, td { border:1px solid #ccc; padding:5px; text-align:left; }
 <table id="tasksTable">
   <thead>
     <tr>
-      <th>ID</th><th>Description</th><th>Assigned Date</th><th>Assigned To</th><th>Deadline</th><th>Status</th><th>Completion Date</th><th>Remarks</th><th>Meeting Notes</th>
+      <th>ID</th><th>Description</th><th>Assigned Date</th><th>Assigned To</th>
+      <th>Deadline</th><th>Status</th><th>Completion Date</th><th>Remarks</th><th>Meeting Notes</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -67,18 +80,15 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqy_ojuWOofqm_DQVvR
 async function fetchTasks() {
   const res = await fetch(SCRIPT_URL);
   const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch(e){
-    console.error("Error fetching tasks:", e);
-    return [];
-  }
+  try { return JSON.parse(text); } 
+  catch(e){ console.error("Error fetching tasks:", e); return []; }
 }
 
 async function renderTasks() {
   const tasks = await fetchTasks();
   const tbody = document.querySelector('#tasksTable tbody');
   tbody.innerHTML = '';
+
   const userFilter = document.getElementById('filterUser').value;
   const statusFilter = document.getElementById('filterStatus').value;
   const from = document.getElementById('filterFrom').value;
@@ -100,7 +110,7 @@ async function renderTasks() {
                       <td>${task.Status}</td>
                       <td>${task['Completion Date']}</td>
                       <td>${task.Remarks}</td>
-                      <td>${task['Meeting Notes'] ? `<a href="${task['Meeting Notes']}" target="_blank">PDF</a>` : ''}</td>`;
+                      <td>${task['Meeting Notes'] || ''}</td>`;
       tbody.appendChild(tr);
     }
   });
@@ -123,23 +133,7 @@ async function saveTask(){
     headers:{'Content-Type':'application/json'}
   });
   const result = await res.json();
-
-  if(result.ID && document.getElementById('pdfFile').files.length>0){
-    const file = document.getElementById('pdfFile').files[0];
-    const reader = new FileReader();
-    reader.onload = async function(e){
-      const base64 = e.target.result.split(',')[1];
-      await fetch(SCRIPT_URL,{
-        method:'POST',
-        body: JSON.stringify({action:'uploadPdf', fileName:file.name, base64:base64, taskId:result.ID}),
-        headers:{'Content-Type':'application/json'}
-      });
-      renderTasks();
-    }
-    reader.readAsDataURL(file);
-  } else {
-    renderTasks();
-  }
+  renderTasks();
 }
 
 // Load tasks on page load
