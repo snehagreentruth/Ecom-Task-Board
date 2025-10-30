@@ -1,109 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Task Dashboard</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f8fafc;
-      color: #333;
-    }
-    h2 {
-      color: #0066cc;
-    }
-    .filters, .add-task {
-      background: #fff;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    select, input, textarea, button {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      margin-right: 10px;
-      font-size: 14px;
-    }
-    button {
-      background-color: #28a745;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #218838;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-    }
-    th {
-      background: #f1f1f1;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Team Task Dashboard</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f6f8fa;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #333;
+  }
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #ccc;
+  }
+  label {
+    font-weight: bold;
+  }
+  select, input, textarea {
+    padding: 8px;
+    margin: 5px 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  button {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #218838;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  table th, table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  table th {
+    background: #f2f2f2;
+  }
+  .filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+</style>
 </head>
 <body>
-  <h2>📋 Task Management Dashboard</h2>
+<div class="container">
+  <h1>Team Task Dashboard</h1>
 
-  <!-- Filters -->
   <div class="filters">
-    <label>Status:</label>
-    <select id="statusFilter">
-      <option value="All">All</option>
-      <option value="To Do">To Do</option>
-      <option value="In Progress">In Progress</option>
-      <option value="Completed">Completed</option>
-    </select>
+    <div>
+      <label for="assignedFilter">Filter by Assigned To:</label>
+      <select id="assignedFilter">
+        <option value="All">All</option>
+        <option value="Sneha">Sneha</option>
+        <option value="Shobha">Shobha</option>
+        <option value="Ice">Ice</option>
+        <option value="Soso">Soso</option>
+        <option value="Virus">Virus</option>
+      </select>
+    </div>
 
-    <label>Assigned To:</label>
-    <select id="assignedFilter">
-      <option value="All">All</option>
-      <option value="Sneha">Sneha</option>
-      <option value="Shobha">Shobha</option>
-      <option value="Ice">Ice</option>
-      <option value="Soso">Soso</option>
-      <option value="Virus">Virus</option>
-    </select>
+    <div>
+      <label for="statusFilter">Filter by Status:</label>
+      <select id="statusFilter">
+        <option value="All">All</option>
+        <option value="To Do">To Do</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+      </select>
+    </div>
 
-    <label>Date Range:</label>
-    <input type="date" id="fromDate" /> to
-    <input type="date" id="toDate" />
+    <div>
+      <label>Date From:</label>
+      <input type="date" id="fromDate" />
+    </div>
+
+    <div>
+      <label>Date To:</label>
+      <input type="date" id="toDate" />
+    </div>
   </div>
 
-  <!-- Add Task Section -->
-  <div class="add-task">
-    <h3>Add Task</h3>
-    <textarea id="taskDescription" rows="2" placeholder="Enter task description..."></textarea><br><br>
-    <label>Assigned To:</label>
-    <input type="text" id="assignedTo" placeholder="Comma-separated names" />
-    <label>Assigned Date:</label>
-    <input type="date" id="assignedDate" />
-    <label>Deadline:</label>
-    <input type="date" id="deadline" /><br><br>
-    <label>Remarks:</label>
-    <input type="text" id="remarks" placeholder="Remarks..." />
-    <label>Status:</label>
-    <select id="status">
-      <option value="To Do">To Do</option>
-      <option value="In Progress">In Progress</option>
-      <option value="Completed">Completed</option>
-    </select>
-    <button onclick="addTask()">Add Task</button>
-  </div>
+  <h3>Add New Task</h3>
+  <input type="text" id="taskDescription" placeholder="Task Description" />
+  <input type="date" id="assignedDate" />
+  <input type="text" id="assignedTo" placeholder="Assigned To (comma-separated names)" />
+  <input type="date" id="deadline" />
+  <select id="status">
+    <option value="To Do">To Do</option>
+    <option value="In Progress">In Progress</option>
+    <option value="Completed">Completed</option>
+  </select>
+  <textarea id="remarks" placeholder="Remarks (optional)"></textarea>
+  <button onclick="addTask()">Add Task</button>
 
-  <!-- Task Table -->
   <table id="taskTable">
     <thead>
       <tr>
@@ -117,56 +127,61 @@
     </thead>
     <tbody></tbody>
   </table>
+</div>
 
-  <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4aEjTqAtIeruu9SVIqb0GEc2S_lauprCl8iBq4sNGrfSTHKO0kig-qrNOK89l0PPb/exec";
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyr1Vz6JW1YA4_KJXuxLU_xbrd38723j6bWgurEqI6dvZmqI4-gUjLA2J6ZfscKOSxG/exec";
 
-    async function addTask() {
-      const taskDescription = document.getElementById("taskDescription").value.trim();
-      const assignedTo = document.getElementById("assignedTo").value.trim();
-      const assignedDate = document.getElementById("assignedDate").value;
-      const deadline = document.getElementById("deadline").value;
-      const status = document.getElementById("status").value;
-      const remarks = document.getElementById("remarks").value.trim();
+async function addTask() {
+  const taskDescription = document.getElementById("taskDescription").value.trim();
+  const assignedDate = document.getElementById("assignedDate").value;
+  const assignedTo = document.getElementById("assignedTo").value.trim();
+  const deadline = document.getElementById("deadline").value;
+  const status = document.getElementById("status").value;
+  const remarks = document.getElementById("remarks").value.trim();
 
-      if (!taskDescription || !assignedTo || !assignedDate || !deadline) {
-        alert("Please fill all mandatory fields!");
-        return;
-      }
+  if (!taskDescription || !assignedDate || !assignedTo || !deadline) {
+    alert("Please fill in all required fields.");
+    return;
+  }
 
-      const taskData = {
-        action: "addTask",
-        taskDescription,
-        assignedTo,
-        assignedDate,
-        deadline,
-        status,
-        remarks,
-      };
+  const payload = {
+    action: "addTask",
+    taskDescription,
+    assignedDate,
+    assignedTo,
+    deadline,
+    status,
+    remarks
+  };
 
-      try {
-        const response = await fetch(WEB_APP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(taskData),
-        });
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-        const result = await response.json();
-        if (result.success) {
-          alert("Task added successfully!");
-          loadTasks();
-        } else {
-          alert("Error adding task: " + (result.error || "Unknown error"));
-        }
-      } catch (error) {
-        alert("Server connection error!");
-        console.error(error);
-      }
+    const result = await response.json();
+    if (result.success) {
+      alert("Task added successfully!");
+      loadTasks();
+      document.querySelectorAll("input, textarea").forEach(el => el.value = "");
+    } else {
+      alert("Error: " + (result.error || "Unknown issue"));
     }
+  } catch (error) {
+    alert("Server connection error!");
+    console.error(error);
+  }
+}
 
-    async function loadTasks() {
-      // Future: implement fetching tasks
-    }
-  </script>
+async function loadTasks() {
+  // Optional: fetch existing tasks from Google Sheets if you implement doGet()
+}
+
+document.addEventListener("DOMContentLoaded", loadTasks);
+</script>
 </body>
 </html>
