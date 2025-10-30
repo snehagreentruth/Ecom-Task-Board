@@ -8,6 +8,7 @@ body { font-family: Arial; margin:20px; }
 input, select, button { margin:5px; }
 table { border-collapse: collapse; width:100%; margin-top:10px; }
 th, td { border:1px solid #ccc; padding:5px; text-align:left; }
+tr:hover { background-color: #f2f2f2; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -75,13 +76,17 @@ th, td { border:1px solid #ccc; padding:5px; text-align:left; }
 </table>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPMjfEofUrLvzW7mZgYn9ghN3ZCQJrXfgsDnP8XlcI1FjNwGipaGMX4tDwVKpjjcE/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzq0vEvzioYmmh_9AnUv7kDTGNQBzosLzTUqbYhHLO1BrSP1_1LNVtkOuM2lChUxUSX/exec";
 
 async function fetchTasks() {
-  const res = await fetch(SCRIPT_URL);
-  const text = await res.text();
-  try { return JSON.parse(text); } 
-  catch(e){ console.error("Error fetching tasks:", e); return []; }
+  try {
+    const res = await fetch(SCRIPT_URL);
+    const text = await res.text();
+    return JSON.parse(text);
+  } catch(e) {
+    console.error("Error fetching tasks:", e);
+    return [];
+  }
 }
 
 async function renderTasks() {
@@ -111,6 +116,8 @@ async function renderTasks() {
                       <td>${task['Completion Date']}</td>
                       <td>${task.Remarks}</td>
                       <td>${task['Meeting Notes'] || ''}</td>`;
+      // click row to edit
+      tr.onclick = ()=>prefillTask(task);
       tbody.appendChild(tr);
     }
   });
@@ -127,13 +134,37 @@ async function saveTask(){
     'Status': document.getElementById('status').value
   };
 
-  const res = await fetch(SCRIPT_URL, {
-    method:'POST',
-    body: JSON.stringify({action:'saveTask', task}),
-    headers:{'Content-Type':'application/json'}
-  });
-  const result = await res.json();
-  renderTasks();
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify({action:'saveTask', task}),
+      headers:{'Content-Type':'application/json'}
+    });
+    const result = await res.json();
+    console.log("Saved task:", result);
+    clearForm();
+    renderTasks();
+  } catch(e){
+    console.error("Error saving task:", e);
+  }
+}
+
+function prefillTask(task){
+  document.getElementById('taskID').value = task.ID;
+  document.getElementById('desc').value = task['Task Description'];
+  document.getElementById('assignedTo').value = task['Assigned To'];
+  document.getElementById('assignedDate').value = task['Assigned Date'];
+  document.getElementById('deadline').value = task.Deadline;
+  document.getElementById('status').value = task.Status;
+}
+
+function clearForm(){
+  document.getElementById('taskID').value = '';
+  document.getElementById('desc').value = '';
+  document.getElementById('assignedTo').value = 'Sneha';
+  document.getElementById('assignedDate').value = '';
+  document.getElementById('deadline').value = '';
+  document.getElementById('status').value = 'To Do';
 }
 
 // Load tasks on page load
