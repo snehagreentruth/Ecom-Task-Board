@@ -1,188 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Team Task Dashboard</title>
-<style>
-body { font-family: Arial; background:#f5f6fa; margin:20px; }
-h1 { color:#2f3640; }
-select,input,button { padding:6px; margin:4px; }
-table { width:100%; border-collapse: collapse; margin-top:15px; }
-th,td{border:1px solid #dcdde1; padding:8px; text-align:left;}
-th{background:#273c75;color:white;}
-tr:nth-child(even){background:#f1f2f6;}
-button{background:#44bd32;color:white;border:none;border-radius:4px;cursor:pointer;}
-button:disabled{background:#aaa;cursor:not-allowed;}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Task Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    .filters, .add-task {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    select, input, textarea, button {
+      padding: 6px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      background: #2ecc71;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #27ae60;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #2c3e50;
+      color: white;
+    }
+    tr:hover {
+      background: #f1f1f1;
+    }
+    .status {
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
+  <h1>Team Task Dashboard</h1>
 
-<h1>Team Task Dashboard</h1>
+  <div class="filters">
+    <label for="filterStatus">Filter by Status:</label>
+    <select id="filterStatus" onchange="filterTasks()">
+      <option value="All">All</option>
+      <option value="To Do">To Do</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Completed">Completed</option>
+    </select>
 
-<p>Select your name:</p>
-<select id="userSelect"><option value="">-- Select User --</option></select>
+    <label for="filterMember">Filter by Assigned To:</label>
+    <select id="filterMember" onchange="filterTasks()">
+      <option value="All">All</option>
+      <option value="Sneha">Sneha</option>
+      <option value="Shobha">Shobha</option>
+      <option value="Ice">Ice</option>
+      <option value="Soso">Soso</option>
+      <option value="Virus">Virus</option>
+    </select>
 
-<p>Filters:</p>
-Status:
-<select id="statusFilter">
-<option value="All">All</option>
-<option value="To Do">To Do</option>
-<option value="In Progress">In Progress</option>
-<option value="Completed">Completed</option>
-</select>
-Assigned To:
-<select id="assignedFilter"><option value="All">All</option></select>
-Date Range:
-<input type="date" id="startDate"> to <input type="date" id="endDate">
+    <label for="filterStart">From:</label>
+    <input type="date" id="filterStart" onchange="filterTasks()" />
+    <label for="filterEnd">To:</label>
+    <input type="date" id="filterEnd" onchange="filterTasks()" />
+  </div>
 
-<div id="addTaskDiv" style="margin-top:10px; display:none;">
-<h3>Add Task</h3>
-Task Description: <input type="text" id="taskDesc"><br>
-Assigned To (comma-separated names): <input type="text" id="taskAssigned"><br>
-Deadline: <input type="date" id="taskDeadline"><br>
-Remarks: <input type="text" id="taskRemarks"><br>
-<button onclick="addTask()">Add Task</button>
-</div>
+  <div class="add-task">
+    <h3>Add Task</h3>
+    <label>Assigned Date:</label>
+    <input type="date" id="assignedDate" />
 
-<table id="taskTable">
-<thead>
-<tr>
-<th>Task Description</th>
-<th>Assigned Date</th>
-<th>Deadline</th>
-<th>Status</th>
-<th>Completion Date</th>
-<th>Remarks</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
+    <label>Task Description:</label>
+    <input type="text" id="taskDescription" placeholder="Enter task description" size="40" />
 
-<script>
-const webAppUrl = "https://script.google.com/macros/s/AKfycbyjjJf2dAHpUnVHf5FF_yrI5j-Jini3XdspFAg332rKRaNDD9K7siIAGjQlasCPCwas/exec";
+    <label>Assigned To (names, comma separated):</label>
+    <input type="text" id="assignedTo" placeholder="e.g., Sneha, Shobha" />
 
-// Define members and admins
-const admins = ["Sneha","Ice"];
-const members = ["Sneha","Shobha","Ice","Soso","Virus"];
-let userName = "";
-let allTasks = [];
+    <label>Deadline:</label>
+    <input type="date" id="deadline" />
 
-async function fetchTasks(){
-  try{
-    const res = await fetch(`https://opensheet.elk.sh/1D1e_PSZilgAZmsmxbyKFdgQpXrMdgKreoynjdGt5wy8/Tasks`);
-    allTasks = await res.json();
-    displayTasks();
-  }catch(err){ console.log("Error fetching tasks", err); }
-}
+    <label>Status:</label>
+    <select id="status">
+      <option value="To Do">To Do</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Completed">Completed</option>
+    </select>
 
-function updateAddTaskVisibility(){
-  document.getElementById("addTaskDiv").style.display = admins.includes(userName) ? "block" : "none";
-}
+    <label>Remarks:</label>
+    <input type="text" id="remarks" placeholder="Optional remarks" />
 
-function displayTasks(){
-  const tbody = document.querySelector("#taskTable tbody");
-  tbody.innerHTML = "";
+    <button onclick="addTask()">Add Task</button>
+  </div>
 
-  const statusVal = document.getElementById("statusFilter").value;
-  const assignedVal = document.getElementById("assignedFilter").value;
-  const startDate = document.getElementById("startDate").value;
-  const endDate = document.getElementById("endDate").value;
+  <table id="taskTable">
+    <thead>
+      <tr>
+        <th>Task Description</th>
+        <th>Assigned Date</th>
+        <th>Deadline</th>
+        <th>Status</th>
+        <th>Completion Date</th>
+        <th>Remarks</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-  let filtered = allTasks.filter(task=>{
-    const assignedList = task["Assigned To"].split(",").map(x=>x.trim());
-    const isAssigned = admins.includes(userName) || assignedList.includes(userName);
-    const statusMatch = statusVal==="All" || task.Status===statusVal;
-    const assignedMatch = assignedVal==="All" || assignedList.includes(assignedVal);
-    const startMatch = !startDate || new Date(task["Assigned Date"])>=new Date(startDate);
-    const endMatch = !endDate || new Date(task["Assigned Date"])<=new Date(endDate);
-    return isAssigned && statusMatch && assignedMatch && startMatch && endMatch;
-  });
+  <script>
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbwVHdGlQKfJ4z-tNTANIBDmNdt8Biz2Vny9CpmtyefTbKWxCm1LaXBi81ZO-B7T3Y7C/exec";
+    let tasks = [];
 
-  filtered.sort((a,b)=>new Date(a["Assigned Date"])-new Date(b["Assigned Date"]));
+    async function loadTasks() {
+      try {
+        const res = await fetch(webAppUrl);
+        const data = await res.json();
+        tasks = data.tasks || [];
+        renderTasks(tasks);
+      } catch (err) {
+        console.error("Error loading tasks:", err);
+      }
+    }
 
-  filtered.forEach(task=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${task["Task Description"]}</td>
-      <td>${task["Assigned Date"]}</td>
-      <td>${task.Deadline}</td>
-      <td>${task.Status}</td>
-      <td>${task["Completion Date"]||""}</td>
-      <td>${task.Remarks||""}</td>
-      <td>${task.Status==="Completed"?"✅":
-      `<button onclick="updateTask('${task.ID}','In Progress')">In Progress</button>
-       <button onclick="updateTask('${task.ID}','Completed')">Complete</button>`}</td>`;
-    tbody.appendChild(tr);
-  });
-}
+    async function addTask() {
+      const task = {
+        action: "add",
+        AssignedDate: document.getElementById("assignedDate").value,
+        TaskDescription: document.getElementById("taskDescription").value,
+        AssignedTo: document.getElementById("assignedTo").value,
+        Deadline: document.getElementById("deadline").value,
+        Status: document.getElementById("status").value,
+        Remarks: document.getElementById("remarks").value,
+      };
 
-async function updateTask(taskId,status){
-  await fetch(webAppUrl,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:"update",ID:taskId,Status:status})
-  });
-  fetchTasks();
-}
+      if (!task.TaskDescription || !task.AssignedDate || !task.AssignedTo) {
+        alert("Please fill required fields (Assigned Date, Description, Assigned To).");
+        return;
+      }
 
-async function addTask(){
-  const desc = document.getElementById("taskDesc").value.trim();
-  const assigned = document.getElementById("taskAssigned").value.trim();
-  const deadline = document.getElementById("taskDeadline").value;
-  const remarks = document.getElementById("taskRemarks").value.trim();
-  if(!desc || !assigned){ alert("Task Description and Assigned To required"); return; }
+      try {
+        const res = await fetch(webAppUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(task),
+        });
+        const result = await res.json();
+        if (result.status === "success") {
+          alert("Task added successfully!");
+          loadTasks();
+        } else {
+          alert("Failed to add task.");
+        }
+      } catch (err) {
+        console.error("Error adding task:", err);
+        alert("Server connection error!");
+      }
+    }
 
-  const today = new Date();
-  const assignedDate = today.toISOString().split("T")[0];
+    function renderTasks(list) {
+      const tbody = document.querySelector("#taskTable tbody");
+      tbody.innerHTML = "";
+      list.forEach(task => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${task[1]}</td>
+          <td>${task[2]}</td>
+          <td>${task[4]}</td>
+          <td class="status">${task[5]}</td>
+          <td>${task[6] || ""}</td>
+          <td>${task[7] || ""}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
 
-  try{
-    const res = await fetch(webAppUrl,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        action:"add",
-        TaskDescription: desc,
-        AssignedDate: assignedDate,
-        AssignedTo: assigned,
-        Deadline: deadline,
-        Status: "To Do",
-        CompletionDate: "",
-        Remarks: remarks
-      })
-    });
-    const result = await res.json();
-    if(result.status==="success"){
-      document.getElementById("taskDesc").value="";
-      document.getElementById("taskAssigned").value="";
-      document.getElementById("taskDeadline").value="";
-      document.getElementById("taskRemarks").value="";
-      fetchTasks();
-    }else{ alert("Error adding task"); }
-  }catch(err){ alert("Server connection error: "+err); }
-}
+    function filterTasks() {
+      const status = document.getElementById("filterStatus").value;
+      const member = document.getElementById("filterMember").value;
+      const start = document.getElementById("filterStart").value;
+      const end = document.getElementById("filterEnd").value;
 
-// Populate user dropdown
-const userSelect = document.getElementById("userSelect");
-members.forEach(m => userSelect.appendChild(new Option(m,m)));
-const assignedFilter = document.getElementById("assignedFilter");
-members.forEach(m => assignedFilter.appendChild(new Option(m,m)));
+      let filtered = tasks;
+      if (status !== "All") filtered = filtered.filter(t => t[5] === status);
+      if (member !== "All") filtered = filtered.filter(t => t[3].includes(member));
+      if (start) filtered = filtered.filter(t => new Date(t[2]) >= new Date(start));
+      if (end) filtered = filtered.filter(t => new Date(t[2]) <= new Date(end));
+      renderTasks(filtered);
+    }
 
-userSelect.addEventListener("change", e=>{
-  userName = e.target.value;
-  updateAddTaskVisibility();
-  fetchTasks();
-});
-
-document.getElementById("statusFilter").addEventListener("change", displayTasks);
-document.getElementById("assignedFilter").addEventListener("change", displayTasks);
-document.getElementById("startDate").addEventListener("change", displayTasks);
-document.getElementById("endDate").addEventListener("change", displayTasks);
-
-// Initial load
-fetchTasks();
-</script>
-
+    loadTasks();
+  </script>
 </body>
 </html>
