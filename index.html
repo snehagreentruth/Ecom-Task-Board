@@ -1,187 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Team Task Dashboard</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f6f8fa;
-    margin: 0;
-    padding: 20px;
-  }
-  h1 {
-    text-align: center;
-    color: #333;
-  }
-  .container {
-    max-width: 1000px;
-    margin: 0 auto;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px #ccc;
-  }
-  label {
-    font-weight: bold;
-  }
-  select, input, textarea {
-    padding: 8px;
-    margin: 5px 0;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  button {
-    background: #28a745;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #218838;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  table th, table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
-  table th {
-    background: #f2f2f2;
-  }
-  .filters {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #007bff;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    textarea {
+      resize: vertical;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+      border: none;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .message {
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <h1>Team Task Dashboard</h1>
-
-  <div class="filters">
-    <div>
-      <label for="assignedFilter">Filter by Assigned To:</label>
-      <select id="assignedFilter">
-        <option value="All">All</option>
-        <option value="Sneha">Sneha</option>
-        <option value="Shobha">Shobha</option>
-        <option value="Ice">Ice</option>
-        <option value="Soso">Soso</option>
-        <option value="Virus">Virus</option>
-      </select>
-    </div>
-
-    <div>
-      <label for="statusFilter">Filter by Status:</label>
-      <select id="statusFilter">
-        <option value="All">All</option>
-        <option value="To Do">To Do</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Completed">Completed</option>
-      </select>
-    </div>
-
-    <div>
-      <label>Date From:</label>
-      <input type="date" id="fromDate" />
-    </div>
-
-    <div>
-      <label>Date To:</label>
-      <input type="date" id="toDate" />
-    </div>
+  <div class="container">
+    <h2>Add New Task</h2>
+    <input type="text" id="title" placeholder="Task Title" />
+    <textarea id="description" placeholder="Task Description"></textarea>
+    <select id="priority">
+      <option value="">Select Priority</option>
+      <option>High</option>
+      <option>Medium</option>
+      <option>Low</option>
+    </select>
+    <input type="date" id="dueDate" />
+    <input type="text" id="assignedTo" placeholder="Assigned To" />
+    <button id="addTaskBtn">Add Task</button>
+    <div id="message" class="message"></div>
   </div>
 
-  <h3>Add New Task</h3>
-  <input type="text" id="taskDescription" placeholder="Task Description" />
-  <input type="date" id="assignedDate" />
-  <input type="text" id="assignedTo" placeholder="Assigned To (comma-separated names)" />
-  <input type="date" id="deadline" />
-  <select id="status">
-    <option value="To Do">To Do</option>
-    <option value="In Progress">In Progress</option>
-    <option value="Completed">Completed</option>
-  </select>
-  <textarea id="remarks" placeholder="Remarks (optional)"></textarea>
-  <button onclick="addTask()">Add Task</button>
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbximbdmWKRZ6OrnORqXe6OV5Gmumob8DUFr0y-7Q4D0vP4njzPS8U9oSiR1dyRqPYu4/exec";
 
-  <table id="taskTable">
-    <thead>
-      <tr>
-        <th>Task Description</th>
-        <th>Assigned Date</th>
-        <th>Deadline</th>
-        <th>Status</th>
-        <th>Completion Date</th>
-        <th>Remarks</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+    document.getElementById("addTaskBtn").addEventListener("click", async () => {
+      const title = document.getElementById("title").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const priority = document.getElementById("priority").value;
+      const dueDate = document.getElementById("dueDate").value;
+      const assignedTo = document.getElementById("assignedTo").value.trim();
+      const messageEl = document.getElementById("message");
 
-<script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyr1Vz6JW1YA4_KJXuxLU_xbrd38723j6bWgurEqI6dvZmqI4-gUjLA2J6ZfscKOSxG/exec";
+      if (!title) {
+        messageEl.textContent = "Please enter a task title.";
+        messageEl.style.color = "red";
+        return;
+      }
 
-async function addTask() {
-  const taskDescription = document.getElementById("taskDescription").value.trim();
-  const assignedDate = document.getElementById("assignedDate").value;
-  const assignedTo = document.getElementById("assignedTo").value.trim();
-  const deadline = document.getElementById("deadline").value;
-  const status = document.getElementById("status").value;
-  const remarks = document.getElementById("remarks").value.trim();
+      messageEl.textContent = "Adding task...";
+      messageEl.style.color = "#007bff";
 
-  if (!taskDescription || !assignedDate || !assignedTo || !deadline) {
-    alert("Please fill in all required fields.");
-    return;
-  }
+      try {
+        const response = await fetch(scriptURL, {
+          method: "POST",
+          mode: "cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, description, priority, dueDate, assignedTo })
+        });
 
-  const payload = {
-    action: "addTask",
-    taskDescription,
-    assignedDate,
-    assignedTo,
-    deadline,
-    status,
-    remarks
-  };
+        const result = await response.json();
 
-  try {
-    const response = await fetch(SCRIPT_URL, {
-      method: "POST",
-      mode: "cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+        if (result.success) {
+          messageEl.textContent = "✅ Task added successfully!";
+          messageEl.style.color = "green";
+          document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
+        } else {
+          throw new Error(result.error || "Server error");
+        }
+
+      } catch (error) {
+        console.error(error);
+        messageEl.textContent = "❌ Server connection error!";
+        messageEl.style.color = "red";
+      }
     });
-
-    const result = await response.json();
-    if (result.success) {
-      alert("Task added successfully!");
-      loadTasks();
-      document.querySelectorAll("input, textarea").forEach(el => el.value = "");
-    } else {
-      alert("Error: " + (result.error || "Unknown issue"));
-    }
-  } catch (error) {
-    alert("Server connection error!");
-    console.error(error);
-  }
-}
-
-async function loadTasks() {
-  // Optional: fetch existing tasks from Google Sheets if you implement doGet()
-}
-
-document.addEventListener("DOMContentLoaded", loadTasks);
-</script>
+  </script>
 </body>
 </html>
